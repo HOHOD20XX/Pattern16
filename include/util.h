@@ -153,30 +153,15 @@ namespace Pattern16 {
 			return result;
 		}
 
-		PATTERN16_NO_INLINE auto _pext_u32_BMI1(uint32_t a, uint32_t mask) {
-			auto result = 0u;
-			auto nmask = ~mask;
-			while (mask) {
-				auto start = _lzcnt_u32(mask);
-				auto bitmask = ~0u >> start;
-				if (nmask &= bitmask) {
-					auto offset = _lzcnt_u32(nmask);
-					auto len = offset - start;
-					auto bitmask2 = bitmask >> len;
-					bitmask -= bitmask2;
-					mask &= bitmask2;
-					result <<= len;
-					result |= (a & bitmask) >> -static_cast<int>(offset);
-				}
-				else {
-					bitmask -= bitmask >> -static_cast<int>(start);
-					result <<= -static_cast<int>(start);
-					result |= a & bitmask;
-					break;
-				}
-			}
-			return result;
-		}
+                PATTERN16_NO_INLINE auto _pext_u32_BMI1(uint32_t a, uint32_t mask) {
+                        uint32_t result = 0;
+                        for (uint32_t bb = 1; mask; bb <<= 1) {
+                                uint32_t lowest = mask & -mask;
+                                if (a & lowest) result |= bb;
+                                mask &= mask - 1;
+                        }
+                        return result;
+                }
 
 		template <BMI_VERSION version>
 		PATTERN16_FORCE_INLINE auto _pext_u32_BMI(uint32_t a, uint32_t mask) {
@@ -185,29 +170,15 @@ namespace Pattern16 {
 			else return _pext_u32_BMI_NONE(a, mask);
 		}
 
-		PATTERN16_NO_INLINE auto _pdep_u32_BMI_NONE(uint32_t a, uint32_t mask) {
-			auto result = 0u;
-			auto nmask = ~mask;
-			while (mask) {
-				auto start = _tzcnt_u32(mask);
-				auto bitmask = ~0u << start;
-				if (nmask &= bitmask) {
-					auto len = _tzcnt_u32(nmask) - start;
-					auto bitmask2 = bitmask << len;
-					mask &= bitmask2;
-					bitmask -= bitmask2;
-					result |= (a << start) & bitmask;
-					a >>= len;
-				}
-				else {
-					auto bitmask2 = bitmask << -static_cast<int>(start);
-					bitmask -= bitmask2;
-					result |= (a << start) & bitmask;
-					break;
-				}
-			}
-			return result;
-		}
+                PATTERN16_NO_INLINE auto _pdep_u32_BMI_NONE(uint32_t a, uint32_t mask) {
+                        uint32_t result = 0;
+                        for (uint32_t bb = 1; mask; bb <<= 1) {
+                                uint32_t lowest = mask & -mask;
+                                if (a & bb) result |= lowest;
+                                mask &= mask - 1;
+                        }
+                        return result;
+                }
 
 		template <BMI_VERSION version>
 		PATTERN16_FORCE_INLINE auto _pdep_u32_BMI(uint32_t a, uint32_t mask) {
